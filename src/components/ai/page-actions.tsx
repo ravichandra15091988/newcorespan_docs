@@ -1,37 +1,41 @@
 'use client';
-import { useMemo, useState } from 'react';
-import { Check, ChevronDown, Copy, ExternalLinkIcon } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { type ComponentProps, useMemo, useState } from 'react';
+import { Check, ChevronDown, Copy, ExternalLinkIcon, TextIcon } from 'lucide-react';
+import { cn } from '../../lib/cn';
 import { useCopyButton } from 'fumadocs-ui/utils/use-copy-button';
-import { buttonVariants } from 'fumadocs-ui/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from 'fumadocs-ui/components/ui/popover';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
+import { buttonVariants } from '../ui/button';
+import { usePathname } from 'fumadocs-core/framework';
+import { useTranslations } from '@fuma-translate/react';
 
-const cache = new Map<string, string>();
+const cache = new Map<string, Promise<string>>();
 
-export function LLMCopyButton({
+/**
+ * see https://fumadocs.dev/docs/integrations/llms#page-actions to customize.
+ */
+export function MarkdownCopyButton({
+  markdownUrl,
+  ...props
+}: ComponentProps<'button'> & {
   /**
    * A URL to fetch the raw Markdown/MDX content of page
    */
-  markdownUrl,
-}: {
   markdownUrl: string;
 }) {
+  const t = useTranslations({ note: 'page actions' });
   const [isLoading, setLoading] = useState(false);
   const [checked, onClick] = useCopyButton(async () => {
     const cached = cache.get(markdownUrl);
-    if (cached) return navigator.clipboard.writeText(cached);
+    if (cached) return navigator.clipboard.writeText(await cached);
 
     setLoading(true);
 
     try {
+      const promise = fetch(markdownUrl).then((res) => res.text());
+      cache.set(markdownUrl, promise);
       await navigator.clipboard.write([
         new ClipboardItem({
-          'text/plain': fetch(markdownUrl).then(async (res) => {
-            const content = await res.text();
-            cache.set(markdownUrl, content);
-
-            return content;
-          }),
+          'text/plain': promise,
         }),
       ]);
     } finally {
@@ -42,43 +46,53 @@ export function LLMCopyButton({
   return (
     <button
       disabled={isLoading}
+      onClick={onClick}
+      {...props}
       className={cn(
         buttonVariants({
           color: 'secondary',
           size: 'sm',
           className: 'gap-2 [&_svg]:size-3.5 [&_svg]:text-fd-muted-foreground',
         }),
+        props.className,
       )}
-      onClick={onClick}
     >
       {checked ? <Check /> : <Copy />}
-      Copy Markdown
+      {props.children ?? t('Copy Markdown')}
     </button>
   );
 }
 
-export function ViewOptions({
+/**
+ * see https://fumadocs.dev/docs/integrations/llms#page-actions to customize.
+ */
+export function ViewOptionsPopover({
   markdownUrl,
   githubUrl,
-}: {
+  ...props
+}: ComponentProps<typeof PopoverTrigger> & {
   /**
    * A URL to the raw Markdown/MDX content of page
    */
-  markdownUrl: string;
+  markdownUrl?: string;
 
   /**
    * Source file URL on GitHub
    */
-  githubUrl: string;
+  githubUrl?: string;
 }) {
+  const pathname = usePathname();
+  const t = useTranslations({ note: 'page actions' });
   const items = useMemo(() => {
-    const fullMarkdownUrl =
-      typeof window !== 'undefined' ? new URL(markdownUrl, window.location.origin) : 'loading';
-    const q = `Read ${fullMarkdownUrl}, I want to ask questions about it.`;
+    const pageUrl =
+      typeof window === 'undefined' ? pathname : new URL(pathname, window.location.origin);
+    const q = t('Read {url}, I want to ask questions about it.', {
+      variables: { url: String(pageUrl) },
+    });
 
     return [
-      {
-        title: 'Open in GitHub',
+      githubUrl && {
+        title: t('Open in GitHub'),
         href: githubUrl,
         icon: (
           <svg fill="currentColor" role="img" viewBox="0 0 24 24">
@@ -87,8 +101,13 @@ export function ViewOptions({
           </svg>
         ),
       },
+      markdownUrl && {
+        title: t('View as Markdown'),
+        href: markdownUrl,
+        icon: <TextIcon />,
+      },
       {
-        title: 'Open in Scira AI',
+        title: t('Open in Scira AI'),
         href: `https://scira.ai/?${new URLSearchParams({
           q,
         })}`,
@@ -152,10 +171,10 @@ export function ViewOptions({
         ),
       },
       {
-        title: 'Open in ChatGPT',
+        title: t('Open in ChatGPT'),
         href: `https://chatgpt.com/?${new URLSearchParams({
+          prompt: q,
           hints: 'search',
-          q,
         })}`,
         icon: (
           <svg
@@ -170,7 +189,7 @@ export function ViewOptions({
         ),
       },
       {
-        title: 'Open in Claude',
+        title: t('Open in Claude'),
         href: `https://claude.ai/new?${new URLSearchParams({
           q,
         })}`,
@@ -187,7 +206,7 @@ export function ViewOptions({
         ),
       },
       {
-        title: 'Open in Cursor',
+        title: t('Open in Cursor'),
         icon: (
           <svg
             fill="currentColor"
@@ -203,21 +222,23 @@ export function ViewOptions({
           text: q,
         })}`,
       },
-    ];
-  }, [githubUrl, markdownUrl]);
+    ].filter((v) => !!v);
+  }, [githubUrl, markdownUrl, pathname, t]);
 
   return (
     <Popover>
       <PopoverTrigger
+        {...props}
         className={cn(
           buttonVariants({
             color: 'secondary',
             size: 'sm',
-            className: 'gap-2',
           }),
+          'gap-2 data-[state=open]:bg-fd-accent data-[state=open]:text-fd-accent-foreground',
+          props.className,
         )}
       >
-        Open
+        {props.children ?? t('Open')}
         <ChevronDown className="size-3.5 text-fd-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent className="flex flex-col">

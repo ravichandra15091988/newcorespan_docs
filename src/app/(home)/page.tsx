@@ -23,9 +23,9 @@ const profile = {
   tagline:
     'I build reliable web platforms and developer tools — turning complex problems into clean, maintainable products.',
   location: 'India',
-  email: 'rkandregula@corespan.ai',
+  email: '[EMAIL_ADDRESS]',
   github: 'https://github.com/ravichandra15091988',
-  linkedin: 'www.linkedin.com/in/ravichandra-k',
+  linkedin: 'https://www.linkedin.com/in/ravichandra-k',
 };
 
 const skills = [
@@ -63,21 +63,21 @@ const experience = [
 
 const projects = [
   {
-    title: 'NASA APOD Integration',
+    title: 'NASA APOD API',
     description:
-      "A space-themed card that consumes NASA's APOD API to fetch the Astronomy Picture of the Day, with full request/response documentation.",
-    href: '/docs/index',
+      "A space-themed card that uses NASA's APOD API to fetch the Astronomy Picture of the Day.",
+    href: '/docs/nasa_api',
   },
   {
-    title: 'Akshaya Patra Platform',
+    title: 'Introducing Akshaya Pathra',
     description:
-      'A documented service handling data workflows, request validation, and response previews.',
+      'An intelligent, AI-enabled cooking companion that recreates home-style multi-cuisine recipes in your kitchen.',
     href: '/docs/akshaya_patra',
   },
   {
     title: 'Outbound Policies',
     description:
-      'An integration-action-policy-lookup-service-used-to-simplify-application-data-exchange-by-enforcing-standardized-security-and-compliance-protocols.',
+      'Configure rules that filter and route incoming tickets and events for ITSM and Security integrations.',
     href: '/docs/outbound',
   },
 ];

@@ -1,6 +1,7 @@
 import { baseOptions } from '@/lib/layout.shared';
 import type { ReactNode } from 'react';
 import { HomeLayout } from 'fumadocs-ui/layouts/home';
+
 import {
   NavbarMenu,
   NavbarMenuContent,
